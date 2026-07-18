@@ -13,7 +13,6 @@
 
 * 🔐 **PAM Authentication Engine:** Strips away clunky static certificates. Authenticate users dynamically using Linux system accounts for instant creation, modification, and deletion.
 * 🌍 **Universal Client Profile:** No more generating a new `.ovpn` file for every user. A single, universal `.ovpn` profile is automatically generated and hosted on a built-in Nginx file server (Port 85) for instant deployment.
-* 🔫 **Multi-Login AutoKill (The Sniper):** Actively monitors the OpenVPN management port. If a user exceeds their allowed concurrent device limit, the Sniper instantly drops their connection and temporarily locks their account.
 * ⏳ **Timed & Trial Accounts:** Generate temporary passes (e.g., 30 minutes) or 24-hour trials that automatically self-destruct from the server when time expires.
 * 🧹 **Nightly Sweeper:** A background cronjob that hunts down and deletes expired accounts every night at 1:00 AM to keep your database clean.
 * ☁️ **Automated Telegram Backups:** Zip your entire OpenVPN architecture, user limits, and configurations, send them to Google Drive, and instantly deliver the download link to your Telegram Bot.
@@ -54,7 +53,6 @@ menu
 | :--- | :--- | :--- | :--- |
 | **OpenVPN Server** | UDP/TCP | Custom (Default: 1194) | Primary VPN Tunnel |
 | **Nginx Hub** | HTTP | 85 | Universal `.ovpn` File Server |
-| **OVPN Management** | TCP | 7505 | Localhost API for the Sniper |
 
 ---
 
