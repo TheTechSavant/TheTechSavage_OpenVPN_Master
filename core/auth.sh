@@ -35,9 +35,42 @@ if [[ "$STATUS" != "valid" ]]; then
         /usr/bin/enforcer.sh > /dev/null 2>&1 &
     fi
     clear
-    echo -e "\033[0;31m════════════════════════════════════════════════════════════\033[0m"
-    echo -e "\033[0;31m           ⚠️  SYSTEM LOCKDOWN: LICENSE EXPIRED  ⚠️           \033[0m"
-    echo -e "\033[0;31m════════════════════════════════════════════════════════════\033[0m"
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    CYAN='\033[0;36m'
+    NC='\033[0m'
+
+    echo -e "${RED}════════════════════════════════════════════════════════════${NC}"
+    echo -e "${RED}           ⚠️  SYSTEM LOCKDOWN: LICENSE EXPIRED  ⚠️           ${NC}"
+    echo -e "${RED}════════════════════════════════════════════════════════════${NC}"
+    echo -e ""
+    echo -e "${YELLOW} Your TheTechSavage Autoscript license is currently inactive.${NC}"
+    echo -e " Server IP  : ${GREEN}$MYIP${NC}"
+    echo -e " API Status : ${RED}$MSG${NC}"
+    echo -e ""
+    echo -e "${CYAN} [ SERVICE INFRASTRUCTURE STATUS ]${NC}"
+    echo -e " ❌ OpenVPN Engine & Routing Nodes:          ${RED}OFFLINE${NC}"
+    echo -e " ❌ Nginx Multiplexers & Profile Hub:        ${RED}OFFLINE${NC}"
+    echo -e " ❌ Client Internet Access & Routing:        ${RED}SUSPENDED${NC}"
+    echo -e " ✅ Base Admin SSH Access (Port 22):         ${GREEN}ACTIVE${NC}"
+    echo -e ""
+    echo -e "${YELLOW} [ AUTOMATED SYSTEM NOTICE ]${NC}"
+    echo -e " The License Enforcer has safely suspended all networking and"
+    echo -e " user routing services to protect the server architecture."
+    echo -e ""
+    echo -e " Your client accounts, VPS IP, and configurations are safe."
+    echo -e " However, no connections will be processed until the license"
+    echo -e " is formally renewed via the Master API."
+    echo -e ""
+    echo -e "${CYAN} ➔ To automatically restore all services and power up the${NC}"
+    echo -e "${CYAN}    nodes, please contact the Administrator for renewal:${NC}"
+    echo -e ""
+    echo -e " 💬 Support : ${CYAN}https://t.me/TheTechSavagesupport${NC}"
+    echo -e " 🤖 Bot     : ${CYAN}https://t.me/THETECHSAVAGE_BOT${NC}"
+    echo -e ""
+    echo -e "${RED}════════════════════════════════════════════════════════════${NC}"
+    
     rm -f "$CACHE_FILE"
     exit 1
 fi
