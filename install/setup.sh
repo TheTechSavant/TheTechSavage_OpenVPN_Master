@@ -1,122 +1,28 @@
 #!/bin/bash
-# ==========================================================
-# TheTechSavage Independent OpenVPN Master Installer
-# ==========================================================
-
-REPO_BASE="https://raw.githubusercontent.com/TheTechSavant/TheTechSavage_OpenVPN_Master/main"
-
-MYIP=$(curl -sS -4 ifconfig.me)
-API_URL="https://file2link.thetechsavage.org.ng/api/check_ip?ip=$MYIP"
-
+clear
+I=$(curl -sS -4 ifconfig.me)
+echo -e "\033[0;34m┌────────────────────────────────────────────────────────┐\033[0m"
+echo -e "\033[0;34m│\033[0m            \033[0;32mTHETECHSAVAGE OPENVPN INSTALLER\033[0m             \033[0;34m│\033[0m"
+echo -e "\033[0;34m│\033[0m  \033[0;33mPremium Autoscript Manager - @TheTechSavageTelegram\033[0m   \033[0;34m│\033[0m"
+echo -e "\033[0;34m└────────────────────────────────────────────────────────┘\033[0m"
+echo -e "\n\033[0;33m> Verifying Server IP ($I)...\033[0m\n"
 while true; do
-    echo -e " \033[0;36m>\033[0m \033[0;33mVerifying Server IP ($MYIP) via API...\033[0m"
-    RESPONSE=$(curl -s -m 10 "$API_URL")
-
-    if [[ -z "$RESPONSE" ]]; then
-        echo -e " \033[0;31m[!] Server Error: Cannot connect to License API.\033[0m"
-        echo -e " \033[0;33mRetrying in 5 seconds...\033[0m"
-        sleep 5
+    wget -4 -q -O /tmp/.ovpncore "http://vault.thetechsavage.org.ng/openvpn/install/setup_locked"
+    if ! grep -q "ELF" /tmp/.ovpncore 2>/dev/null; then
+        echo -e "\033[0;31m┌────────────────────────────────────────────────────────┐\033[0m"
+        echo -e "\033[0;31m│ [!] FATAL ERROR: IP ($I) is NOT REGISTERED.       │\033[0m"
+        echo -e "\033[0;31m└────────────────────────────────────────────────────────┘\033[0m"
+        echo -e "\n\033[0;34mSupport :\033[0m \033[0;32mhttps://t.me/TheTechSavagesupport\033[0m"
+        echo -e "\033[0;34mBot     :\033[0m \033[0;32mhttps://t.me/THETECHSAVAGE_BOT\033[0m\n"
+        read -p $'\033[0;33mContact Admin to register your IP, then press [ENTER].\033[0m'
+        rm -f /tmp/.ovpncore
+        clear
+        echo -e "\n\033[0;33m> Re-Verifying Server IP ($I)...\033[0m\n"
         continue
     fi
-
-    STATUS=$(echo "$RESPONSE" | grep -o '"status": *"[^"]*"' | cut -d'"' -f4)
-    CLIENT=$(echo "$RESPONSE" | grep -o '"client": *"[^"]*"' | cut -d'"' -f4)
-    EXP_DATE=$(echo "$RESPONSE" | grep -o '"exp": *"[^"]*"' | cut -d'"' -f4)
-    MSG=$(echo "$RESPONSE" | grep -o '"message": *"[^"]*"' | cut -d'"' -f4)
-
-    if [[ "$STATUS" != "valid" ]]; then
-        echo -e "\033[0;31m┌───────────────────────────────────────────────────────┐\033[0m"
-        echo -e " \033[0;31m[!] FATAL ERROR: $MSG\033[0m"
-        echo -e "\033[0;31m└───────────────────────────────────────────────────────┘\033[0m"
-        echo -e " \033[0;36mSupport :\033[0m https://t.me/TheTechSavagesupport"
-        echo -e " \033[0;36mBot     :\033[0m https://t.me/THETECHSAVAGE_BOT"
-        read -p " Contact Admin to register your IP, then press [ENTER] to retry."
-        continue
-    fi
-
-    echo -e " \033[0;32m[OK] License Valid! Welcome $CLIENT.\033[0m"
-    echo -e " \033[0;32m[OK] Expiry Date: $EXP_DATE\033[0m"
-    echo -e "\033[0;36m└───────────────────────────────────────────────────────┘\033[0m"
-    sleep 3
+    echo -e "\033[0;32m[OK] License Valid! Connecting to Secure Vault...\033[0m\n"
     break
 done
-
-clear
-echo "Initializing System Architecture..."
-mkdir -p /etc/xray /etc/openvpn /usr/local/etc/openvpn /var/log/xray
-
-apt update && apt install -y openvpn easy-rsa iptables-persistent zip unzip wget curl vnstat nginx
-
-echo "=========================================================="
-echo " Starting OpenVPN Core Configuration..."
-echo "=========================================================="
-wget -q "$REPO_BASE/install/openvpn-engine.sh?t=$(date +%s)" -O /tmp/openvpn-engine.sh
-chmod +x /tmp/openvpn-engine.sh
-/tmp/openvpn-engine.sh
-rm -f /tmp/openvpn-engine.sh
-
-systemctl restart openvpn-server@server
-
-echo "Configuring Nginx File Server on Port 85..."
-mkdir -p /var/www/html/ovpn
-cp /root/Universal-Client.ovpn /var/www/html/ovpn/Universal-Client.ovpn
-chmod 644 /var/www/html/ovpn/*.ovpn
-
-cat > /etc/nginx/conf.d/ovpn-download.conf <<EOF
-server {
-    listen 85;
-    server_name _;
-    root /var/www/html/ovpn;
-    autoindex on;
-}
-EOF
-rm -f /etc/nginx/sites-enabled/default
-systemctl restart nginx
-
-echo "Deploying Core Security Modules..."
-wget -q "$REPO_BASE/core/auth.sh" -O /usr/bin/auth.sh
-wget -q "$REPO_BASE/core/enforcer.sh" -O /usr/bin/enforcer.sh
-wget -q "$REPO_BASE/core/version.txt" -O /etc/openvpn/version.txt
-
-chmod +x /usr/bin/auth.sh /usr/bin/enforcer.sh
-chattr +i /usr/bin/auth.sh /usr/bin/enforcer.sh
-
-echo "Deploying Management Suite..."
-wget -q "$REPO_BASE/menu/menu" -O /usr/bin/menu
-wget -q "$REPO_BASE/menu/menu-ovpn.sh" -O /usr/bin/menu-ovpn.sh
-wget -q "$REPO_BASE/menu/menu-set.sh" -O /usr/bin/menu-set.sh
-wget -q "$REPO_BASE/menu/update.sh" -O /usr/bin/update.sh
-wget -q "$REPO_BASE/menu/speedtest" -O /usr/bin/speedtest
-wget -q "$REPO_BASE/menu/health-check" -O /usr/bin/health-check
-
-wget -q "$REPO_BASE/ovpn/add-ovpn" -O /usr/bin/add-ovpn
-wget -q "$REPO_BASE/ovpn/del-ovpn" -O /usr/bin/del-ovpn
-wget -q "$REPO_BASE/ovpn/renew-ovpn" -O /usr/bin/renew-ovpn
-wget -q "$REPO_BASE/ovpn/member-ovpn" -O /usr/bin/member-ovpn
-wget -q "$REPO_BASE/ovpn/cek-ovpn" -O /usr/bin/cek-ovpn
-wget -q "$REPO_BASE/ovpn/xp" -O /usr/bin/ovpn-xp
-wget -q "$REPO_BASE/ovpn/trial-ovpn" -O /usr/bin/trial-ovpn
-wget -q "$REPO_BASE/ovpn/timed-ovpn" -O /usr/bin/timed-ovpn
-wget -q "$REPO_BASE/ovpn/api-ovpn" -O /usr/bin/api-ovpn
-
-wget -q "$REPO_BASE/utils/backup" -O /usr/bin/backup.sh
-wget -q "$REPO_BASE/utils/restore" -O /usr/bin/restore.sh
-
-chmod +x /usr/bin/menu* /usr/bin/add-ovpn /usr/bin/del-ovpn /usr/bin/renew-ovpn /usr/bin/member-ovpn /usr/bin/cek-ovpn /usr/bin/ovpn-xp /usr/bin/trial-ovpn /usr/bin/timed-ovpn /usr/bin/api-ovpn /usr/bin/backup.sh /usr/bin/restore.sh /usr/bin/speedtest /usr/bin/health-check /usr/bin/update.sh
-
-curl -s https://rclone.org/install.sh | sudo bash > /dev/null 2>&1
-mkdir -p /root/.config/rclone
-wget -q "$REPO_BASE/core/rclone.conf" -O /root/.config/rclone/rclone.conf
-
-echo "0 * * * * root /usr/bin/enforcer.sh" > /etc/cron.d/license_enforcer
-echo "0 1 * * * root /usr/bin/ovpn-xp" > /etc/cron.d/ovpn-xp
-
-service cron restart
-
-echo "=========================================================="
-echo "INSTALLATION COMPLETE. AUTHENTICATION LOCKED."
-echo "Universal Profile: http://$MYIP:85/Universal-Client.ovpn"
-echo "Type 'menu' to initialize your OpenVPN Management Suite."
-echo "=========================================================="
-
-rm -f /root/setup.sh
+chmod +x /tmp/.ovpncore
+/tmp/.ovpncore
+rm -f /tmp/.ovpncore
