@@ -1,0 +1,89 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+clear
+
+echo -e "\033[0;36m┌─────────────────────────────────────────────────────┐\033[0m"
+echo -e "\033[0;33m               SYSTEM RESTORE MANAGER                 \033[0m"
+echo -e "\033[0;36m└─────────────────────────────────────────────────────┘\033[0m"
+echo -e " \033[0;32mHint:\033[0m Paste your Google Drive link or direct download link below.\n"
+read -p " Paste Backup Link : " url
+
+if [[ -z "$url" ]]; then
+    echo -e " \033[0;31mError: Link cannot be empty.\033[0m"
+    read -n 1 -s -r -p "Press any key to return..."
+    backup.sh
+    exit 1
+fi
+
+echo -e " \033[0;32m[+]\033[0m Downloading Backup Archive..."
+cd /root
+
+# Smart Link Handler: Auto-Convert GDrive links
+if [[ "$url" == *"drive.google.com"* ]]; then
+    FILE_ID=$(echo "$url" | sed -E 's/.*(\/d\/|id=)([a-zA-Z0-9_-]+).*/\2/')
+    
+    if [[ -n "$FILE_ID" && "$FILE_ID" != "$url" ]]; then
+        url="https://drive.google.com/uc?export=download&id=$FILE_ID"
+    fi
+fi
+
+wget -q -O backup.zip "$url"
+
+if [ ! -f "backup.zip" ]; then
+    echo -e " \033[0;31mError: Download failed. Check the link.\033[0m"
+    read -n 1 -s -r -p "Press any key to return..."
+    backup.sh
+    exit 1
+fi
+
+echo -e " \033[0;32m[+]\033[0m Extracting Databases..."
+mkdir -p /root/restore_temp
+unzip -o backup.zip -d /root/restore_temp > /dev/null 2>&1
+
+echo -e " \033[0;32m[+]\033[0m Restoring PAM Users (Smart Append)..."
+if [ -f "/root/restore_temp/ssh/vpn_users.txt" ]; then
+    while read user; do
+        if id "$user" &>/dev/null; then
+            echo -e "     \033[0;33mSkipped:\033[0m $user (Already exists)"
+        else
+            grep -w "^$user" /root/restore_temp/ssh/passwd >> /etc/passwd
+            grep -w "^$user" /root/restore_temp/ssh/shadow >> /etc/shadow
+            grep -w "^$user" /root/restore_temp/ssh/group >> /etc/group
+            grep -w "^$user" /root/restore_temp/ssh/gshadow >> /etc/gshadow
+            echo -e "     \033[0;32mRestored:\033[0m $user"
+        fi
+    done < /root/restore_temp/ssh/vpn_users.txt
+fi
+
+echo -e " \033[0;32m[+]\033[0m Restoring OpenVPN Configurations..."
+if [ -f "/root/restore_temp/openvpn/server.conf" ]; then
+    cp /root/restore_temp/openvpn/server.conf /etc/openvpn/server/server.conf
+fi
+if [ -f "/root/restore_temp/openvpn/Universal-Client.ovpn" ]; then
+    cp /root/restore_temp/openvpn/Universal-Client.ovpn /root/Universal-Client.ovpn
+    cp /root/Universal-Client.ovpn /var/www/html/ovpn/Universal-Client.ovpn 2>/dev/null
+fi
+if [ -d "/root/restore_temp/openvpn/limit" ]; then
+    cp -r /root/restore_temp/openvpn/limit/* /etc/openvpn/limit/ 2>/dev/null
+fi
+
+echo -e " \033[0;32m[+]\033[0m Restoring System Settings & Cronjobs..."
+if [ -d "/root/restore_temp/system" ]; then
+    [[ -f /root/restore_temp/system/tg_backup.conf ]] && cp /root/restore_temp/system/tg_backup.conf /etc/openvpn/tg_backup.conf && chmod 600 /etc/openvpn/tg_backup.conf
+    [[ -f /root/restore_temp/system/auto_backup ]] && cp /root/restore_temp/system/auto_backup /etc/cron.d/auto_backup
+    [[ -f /root/restore_temp/system/auto_reboot ]] && cp /root/restore_temp/system/auto_reboot /etc/cron.d/auto_reboot
+    [[ -f /root/restore_temp/system/ovpn-sniper ]] && cp /root/restore_temp/system/ovpn-sniper /etc/cron.d/ovpn-sniper
+fi
+
+echo -e " \033[0;32m[+]\033[0m Restarting Core Services..."
+systemctl restart openvpn-server@server
+systemctl restart cron
+
+rm -rf /root/restore_temp
+rm -f /root/backup.zip
+
+echo -e "\033[0;36m┌─────────────────────────────────────────────────────┐\033[0m"
+echo -e " \033[0;32mRESTORE COMPLETE!\033[0m All users and schedules migrated."
+echo -e "\033[0;36m└─────────────────────────────────────────────────────┘\033[0m"
+read -n 1 -s -r -p "Press any key to return..."
+backup.sh
