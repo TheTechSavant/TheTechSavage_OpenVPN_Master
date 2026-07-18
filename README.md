@@ -25,7 +25,7 @@
 Run this command on a fresh **Ubuntu 20.04 / 22.04 / 24.04 LTS** or **Debian 10 / 11 / 12** VPS.
 
 ```bash
-apt update && apt install -y wget && wget -q https://raw.githubusercontent.com/TheTechSavant/TheTechSavage_OpenVPN_Master/main/install/setup.sh && chmod +x setup.sh && ./setup.sh
+apt update && apt install -y wget && wget -q [https://raw.githubusercontent.com/TheTechSavant/TheTechSavage_OpenVPN_Master/main/install/setup.sh](https://raw.githubusercontent.com/TheTechSavant/TheTechSavage_OpenVPN_Master/main/install/setup.sh) -O setup.sh && chmod +x setup.sh && ./setup.sh
 ```
 
 ### 🛠️ Setup Steps
@@ -51,7 +51,7 @@ menu
 
 | Service | Protocol | Port | Function |
 | :--- | :--- | :--- | :--- |
-| **OpenVPN Server** | UDP/TCP | CUSTOM | Primary VPN Tunnel |
+| **OpenVPN Server** | UDP/TCP | Custom (Default: 1194) | Primary VPN Tunnel |
 | **Nginx Hub** | HTTP | 85 | Universal `.ovpn` File Server |
 
 ---
