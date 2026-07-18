@@ -1,0 +1,81 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+clear
+echo -e "${CYAN}┌─────────────────────────────────────────────────────┐${NC}"
+echo -e "${YELLOW}               SECURITY & LOCK MANAGER                ${NC}"
+echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
+echo -e "  ${GREEN}[1]${NC} View Locked Accounts"
+echo -e "  ${GREEN}[2]${NC} Manual Lock & Disconnect User"
+echo -e "  ${GREEN}[3]${NC} Unlock User (Pardon)"
+echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
+echo -e "  ${RED}[0]${NC} Back to OVPN Menu"
+echo -e ""
+read -p " Select Option : " req
+
+case $req in
+    1)
+        clear
+        echo -e "${CYAN}┌─────────────────────────────────────────────────────┐${NC}"
+        echo -e "${RED}                 LOCKED ACCOUNTS                      ${NC}"
+        echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
+        locked_count=0
+        
+        while IFS=: read -r username password uid gid info home shell; do
+            if [[ "$uid" -ge 1000 && "$username" != "nobody" && "$shell" == "/bin/false" ]]; then
+                status=$(passwd -S "$username" 2>/dev/null | awk '{print $2}')
+                if [[ "$status" == "L" || "$status" == "LK" ]]; then
+                    if [[ $locked_count -eq 0 ]]; then
+                        echo -e " USERNAME"
+                        echo -e "${CYAN}───────────────────────────────────────────────────────${NC}"
+                    fi
+                    echo -e " ${RED}$username${NC}"
+                    ((locked_count++))
+                fi
+            fi
+        done < /etc/passwd
+        
+        if [[ $locked_count -eq 0 ]]; then
+            echo -e "  ${GREEN}No accounts are currently locked.${NC}"
+        fi
+        echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
+        read -n 1 -s -r -p "Press any key to return..."
+        locker-ovpn
+        ;;
+    2)
+        read -p " Enter Username to Lock : " user
+        if getent passwd "$user" > /dev/null 2>&1; then
+            passwd -l "$user" > /dev/null 2>&1
+            echo "kill $user" | socat - TCP4:127.0.0.1:7505 > /dev/null 2>&1
+            echo -e " ${GREEN}[+] User $user has been locked and disconnected!${NC}"
+        else
+            echo -e " ${RED}[!] User not found.${NC}"
+        fi
+        sleep 2
+        locker-ovpn
+        ;;
+    3)
+        read -p " Enter Username to Unlock : " user
+        if getent passwd "$user" > /dev/null 2>&1; then
+            passwd -u "$user" > /dev/null 2>&1
+            echo -e " ${GREEN}[+] User $user unlocked. They may now connect.${NC}"
+        else
+            echo -e " ${RED}[!] User not found.${NC}"
+        fi
+        sleep 2
+        locker-ovpn
+        ;;
+    0)
+        menu-ovpn.sh
+        ;;
+    *)
+        echo -e "${RED}Invalid Option${NC}"
+        sleep 1
+        locker-ovpn
+        ;;
+esac

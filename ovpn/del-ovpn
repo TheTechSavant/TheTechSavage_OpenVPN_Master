@@ -1,0 +1,32 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+clear
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${RED}          DELETE OPENVPN ACCOUNT          ${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+read -p " Username to delete : " user
+
+if getent passwd "$user" > /dev/null 2>&1; then
+    # Kill active connections instantly
+    pkill -u "$user" > /dev/null 2>&1
+    
+    # Delete the user from the system
+    userdel -f "$user" > /dev/null 2>&1
+    
+    # Clean up their limit file
+    rm -f /etc/openvpn/limit/$user
+    
+    echo -e "\n ${GREEN}[OK] User $user has been deleted and disconnected.${NC}"
+else
+    echo -e "\n ${RED}[!] User not found.${NC}"
+fi
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+read -n 1 -s -r -p "Press any key to return..."
+menu-ovpn.sh

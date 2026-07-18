@@ -1,0 +1,49 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+clear
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}                OPENVPN USER LIST                 ${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf " %-15s %-15s %-15s\n" "USERNAME" "EXP DATE" "STATUS"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+count=0
+
+# Scan Linux users with UID >= 1000 and /bin/false shell
+while IFS=: read -r username password uid gid info home shell; do
+    if [[ "$uid" -ge 1000 && "$username" != "nobody" ]]; then
+        if [[ "$shell" == "/bin/false" ]]; then
+            
+            exp_raw=$(chage -l "$username" | grep "Account expires" | cut -d: -f2 | sed 's/^ //g')
+            
+            if [[ "$exp_raw" == "never" ]]; then
+                exp_display="Lifetime"
+                status="${GREEN}ACTIVE${NC}"
+            else
+                exp_display=$(date -d "$exp_raw" "+%d-%b-%Y" 2>/dev/null)
+                exp_sec=$(date -d "$exp_raw" +%s 2>/dev/null)
+                now_sec=$(date +%s)
+                
+                if [[ $exp_sec -ge $now_sec ]]; then
+                    status="${GREEN}ACTIVE${NC}"
+                else
+                    status="${RED}EXPIRED${NC}"
+                fi
+            fi
+            
+            printf " %-15s %-15s %b\n" "$username" "$exp_display" "$status"
+            ((count++))
+        fi
+    fi
+done < /etc/passwd
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e " TOTAL USERS : $count"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+read -n 1 -s -r -p "Press any key to return..."
+menu-ovpn.sh

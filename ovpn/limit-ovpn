@@ -1,0 +1,37 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+clear
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}        MODIFY OPENVPN LOGIN LIMIT        ${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+read -p " Target Username : " user
+
+if getent passwd "$user" > /dev/null 2>&1; then
+    cur_limit="1"
+    if [[ -f "/etc/openvpn/limit/$user" ]]; then
+        cur_limit=$(cat "/etc/openvpn/limit/$user")
+    fi
+    
+    echo -e " Current Limit : ${YELLOW}$cur_limit Connection(s)${NC}"
+    read -p " Enter New Max Limit : " new_limit
+    
+    if [[ -z "$new_limit" || ! "$new_limit" =~ ^[0-9]+$ ]]; then
+        echo -e "\n ${RED}[ERROR] Invalid number! Limit unchanged.${NC}"
+    else
+        echo "$new_limit" > "/etc/openvpn/limit/$user"
+        echo -e "\n ${GREEN}[OK] Limit for $user updated to $new_limit!${NC}"
+    fi
+else
+    echo -e "\n ${RED}[!] User not found.${NC}"
+fi
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+read -n 1 -s -r -p "Press any key to return..."
+menu-ovpn.sh

@@ -1,0 +1,45 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+clear
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}           RENEW OPENVPN ACCOUNT          ${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+read -p " Target Username : " user
+
+if getent passwd "$user" > /dev/null 2>&1; then
+    read -p " Add Days        : " days
+    [[ -z "$days" ]] && days=30
+
+    # Get current expiry from Linux shadow file
+    exp_raw=$(chage -l "$user" | grep "Account expires" | cut -d: -f2 | sed 's/^ //g')
+    
+    now=$(date +%Y-%m-%d)
+    d1=$(date -d "$exp_raw" +%s 2>/dev/null)
+    d2=$(date -d "$now" +%s)
+
+    # Smart Math: If active, add to existing. If expired, add to today.
+    if [[ $d1 -ge $d2 ]]; then
+        new_exp=$(date -d "$exp_raw + $days days" +"%Y-%m-%d")
+    else
+        new_exp=$(date -d "$now + $days days" +"%Y-%m-%d")
+    fi
+
+    # Apply new expiration
+    chage -E "$new_exp" "$user"
+    
+    echo -e "\n ${GREEN}[OK] User $user successfully renewed!${NC}"
+    echo -e " New Expiry Date: ${GREEN}$(date -d "$new_exp" "+%d-%b-%Y")${NC}"
+else
+    echo -e "\n ${RED}[!] User not found.${NC}"
+fi
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+read -n 1 -s -r -p "Press any key to return..."
+menu-ovpn.sh
