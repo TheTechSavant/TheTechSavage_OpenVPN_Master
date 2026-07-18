@@ -46,14 +46,49 @@ case $opt in
     read -n 1 -s -r -p "Press any key to return..." 
     menu-set.sh ;;
 3|03)
-    read -p " Input hour (0-23): " hour
-    if [[ "$hour" =~ ^[0-9]+$ ]] && [ "$hour" -ge 0 ] && [ "$hour" -le 23 ]; then
-        echo "0 $hour * * * root /sbin/reboot" > /etc/cron.d/auto_reboot
-        service cron restart
-        echo -e "${GREEN}Auto-Reboot set to daily at $hour:00!${NC}"
-    else
-        echo -e "${RED}[ERROR] Invalid Number!${NC}"
-    fi
+    clear
+    echo -e "${CYAN}┌─────────────────────────────────────────────────────┐${NC}"
+    echo -e "${YELLOW}                 AUTO-REBOOT SETTINGS                 ${NC}"
+    echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
+    echo -e "  [\033[0;32m1\033[0m] Every 1 Hour"
+    echo -e "  [\033[0;32m2\033[0m] Every 6 Hours"
+    echo -e "  [\033[0;32m3\033[0m] Every 12 Hours"
+    echo -e "  [\033[0;32m4\033[0m] Every 24 Hours (Daily)"
+    echo -e "  [\033[0;31m5\033[0m] Turn OFF Auto-Reboot"
+    echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
+    echo -e "  [\033[0;31m0\033[0m] Back to Settings Menu"
+    echo ""
+    read -p " Select Option : " rbt_opt
+    
+    case $rbt_opt in
+        1)
+            echo "0 * * * * root /sbin/reboot" > /etc/cron.d/auto_reboot
+            echo -e " \n${GREEN}[OK] Auto-Reboot set to Every 1 Hour!${NC}"
+            ;;
+        2)
+            echo "0 */6 * * * root /sbin/reboot" > /etc/cron.d/auto_reboot
+            echo -e " \n${GREEN}[OK] Auto-Reboot set to Every 6 Hours!${NC}"
+            ;;
+        3)
+            echo "0 */12 * * * root /sbin/reboot" > /etc/cron.d/auto_reboot
+            echo -e " \n${GREEN}[OK] Auto-Reboot set to Every 12 Hours!${NC}"
+            ;;
+        4)
+            echo "0 0 * * * root /sbin/reboot" > /etc/cron.d/auto_reboot
+            echo -e " \n${GREEN}[OK] Auto-Reboot set to Every 24 Hours (Midnight)!${NC}"
+            ;;
+        5)
+            rm -f /etc/cron.d/auto_reboot
+            echo -e " \n${RED}[!] Auto-Reboot turned OFF!${NC}"
+            ;;
+        0)
+            menu-set.sh
+            ;;
+        *)
+            echo -e " \n${RED}Invalid Option${NC}"
+            ;;
+    esac
+    service cron restart > /dev/null 2>&1
     sleep 2; menu-set.sh ;;
 4|04)
     clear
@@ -64,10 +99,10 @@ case $opt in
     read -n 1 -s -r -p "Press any key to return..." ; menu-set.sh ;;
 5|05)
     systemctl restart openvpn-server@server
-    echo -e "${GREEN}OpenVPN Engine Restarted Successfully!${NC}"
+    echo -e "\n${GREEN}OpenVPN Engine Restarted Successfully!${NC}"
     sleep 2; menu-set.sh ;;
 6|06) health-check ;;
 7|07) /usr/bin/update.sh ;;
 0|00) menu ;;
-*) echo -e "${RED}Invalid Option${NC}"; sleep 1; menu-set.sh ;;
+*) echo -e "\n${RED}Invalid Option${NC}"; sleep 1; menu-set.sh ;;
 esac
