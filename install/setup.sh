@@ -6,15 +6,42 @@
 # 1. DEFINE YOUR INDEPENDENT VAULT
 REPO_BASE="https://raw.githubusercontent.com/TheTechSavant/TheTechSavage_OpenVPN_Master/main"
 
-# 2. LICENSE CHECK
+# 2. STRICT LICENSE CHECK
 MYIP=$(curl -sS -4 ifconfig.me)
 API_URL="https://file2link.thetechsavage.org.ng/api/check_ip?ip=$MYIP"
-RESPONSE=$(curl -s -m 10 "$API_URL")
 
-if [[ ! "$RESPONSE" =~ "valid" ]]; then
-    echo "LICENSE ERROR: Access Denied. Contact Admin."
-    exit 1
-fi
+while true; do
+    echo -e " \033[0;36m>\033[0m \033[0;33mVerifying Server IP ($MYIP) via API...\033[0m"
+    RESPONSE=$(curl -s -m 10 "$API_URL")
+
+    if [[ -z "$RESPONSE" ]]; then
+        echo -e " \033[0;31m[!] Server Error: Cannot connect to License API.\033[0m"
+        echo -e " \033[0;33mRetrying in 5 seconds...\033[0m"
+        sleep 5
+        continue
+    fi
+
+    STATUS=$(echo "$RESPONSE" | grep -o '"status": *"[^"]*"' | cut -d'"' -f4)
+    CLIENT=$(echo "$RESPONSE" | grep -o '"client": *"[^"]*"' | cut -d'"' -f4)
+    EXP_DATE=$(echo "$RESPONSE" | grep -o '"exp": *"[^"]*"' | cut -d'"' -f4)
+    MSG=$(echo "$RESPONSE" | grep -o '"message": *"[^"]*"' | cut -d'"' -f4)
+
+    if [[ "$STATUS" != "valid" ]]; then
+        echo -e "\033[0;31m┌───────────────────────────────────────────────────────┐\033[0m"
+        echo -e " \033[0;31m[!] FATAL ERROR: $MSG\033[0m"
+        echo -e "\033[0;31m└───────────────────────────────────────────────────────┘\033[0m"
+        echo -e " \033[0;36mSupport :\033[0m https://t.me/TheTechSavagesupport"
+        echo -e " \033[0;36mBot     :\033[0m https://t.me/THETECHSAVAGE_BOT"
+        read -p " Contact Admin to register your IP, then press [ENTER] to retry."
+        continue
+    fi
+
+    echo -e " \033[0;32m[OK] License Valid! Welcome $CLIENT.\033[0m"
+    echo -e " \033[0;32m[OK] Expiry Date: $EXP_DATE\033[0m"
+    echo -e "\033[0;36m└───────────────────────────────────────────────────────┘\033[0m"
+    sleep 3
+    break
+done
 
 clear
 echo "Initializing System Architecture..."
@@ -66,7 +93,7 @@ chattr +i /usr/bin/auth.sh /usr/bin/enforcer.sh
 echo "Deploying Management Suite..."
 wget -q "$REPO_BASE/menu/menu" -O /usr/bin/menu
 wget -q "$REPO_BASE/menu/menu-ovpn.sh" -O /usr/bin/menu-ovpn.sh
-wget -q "$REPO_BASE/menu/menu-ssh.sh" -O /usr/bin/menu-set.sh
+wget -q "$REPO_BASE/menu/menu-set.sh" -O /usr/bin/menu-set.sh
 wget -q "$REPO_BASE/menu/update.sh" -O /usr/bin/update.sh
 wget -q "$REPO_BASE/menu/speedtest" -O /usr/bin/speedtest
 wget -q "$REPO_BASE/menu/health-check" -O /usr/bin/health-check

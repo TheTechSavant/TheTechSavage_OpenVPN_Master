@@ -42,36 +42,14 @@ fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Detect IPv4
-if [[ $(ip -4 addr | grep inet | grep -vEc '127(\.[0-9]{1,3}){3}') -eq 1 ]]; then
-	ip=$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}')
-else
-	echo "Which IPv4 address should be used?"
-	ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}' | nl -s ') '
-	read -p "IPv4 address [1]: " ip_number
-	[[ -z "$ip_number" ]] && ip_number="1"
-	ip=$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}' | sed -n "$ip_number"p)
+# Auto-Detect IPv4 Only
+ip=$(ip -4 route get 8.8.8.8 | awk {'print $7'} | tr -d '\n')
+if [[ -z "$ip" ]]; then
+	ip=$(curl -sS -4 ifconfig.me)
 fi
 
-if echo "$ip" | grep -qE '^(10\.|172\.1[6789]\.|172\.2[0-9]\.|172\.3[01]\.|192\.168)'; then
-	get_public_ip=$(grep -m 1 -oE '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' <<< "$(wget -T 10 -t 1 -4qO- "http://ip1.dynupdate.no-ip.com/" || curl -m 10 -4Ls "http://ip1.dynupdate.no-ip.com/")")
-	read -p "Public IPv4 address / hostname [$get_public_ip]: " public_ip
-	[[ -z "$public_ip" ]] && public_ip="$get_public_ip"
-fi
-
-# Detect IPv6
-if [[ $(ip -6 addr | grep -c 'inet6 [23]') -eq 1 ]]; then
-	ip6=$(ip -6 addr | grep 'inet6 [23]' | cut -d '/' -f 1 | grep -oE '([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}')
-fi
-if [[ $(ip -6 addr | grep -c 'inet6 [23]') -gt 1 ]]; then
-	number_of_ip6=$(ip -6 addr | grep -c 'inet6 [23]')
-	echo
-	echo "Which IPv6 address should be used?"
-	ip -6 addr | grep 'inet6 [23]' | cut -d '/' -f 1 | grep -oE '([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}' | nl -s ') '
-	read -p "IPv6 address [1]: " ip6_number
-	[[ -z "$ip6_number" ]] && ip6_number="1"
-	ip6=$(ip -6 addr | grep 'inet6 [23]' | cut -d '/' -f 1 | grep -oE '([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}' | sed -n "$ip6_number"p)
-fi
+# Disable IPv6 Configuration
+ip6=""
 
 echo "Which protocol should OpenVPN use?"
 echo "   1) UDP (recommended)"
