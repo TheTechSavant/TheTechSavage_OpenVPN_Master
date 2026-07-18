@@ -1,0 +1,67 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+clear
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}       CREATE TIMED OPENVPN ACCOUNT       ${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+# 1. Input Details
+while true; do
+    read -p " Username   : " Login
+    if [[ -z "$Login" ]]; then
+        echo -e "${RED}Error: Username cannot be empty!${NC}"
+    elif getent passwd "$Login" > /dev/null 2>&1; then
+        echo -e "${RED}Error: User '$Login' already exists! Try another.${NC}"
+    else
+        break
+    fi
+done
+
+read -p " Password   : " Pass
+read -p " Minutes    : " minutes
+
+[[ -z "$minutes" || ! "$minutes" =~ ^[0-9]+$ ]] && minutes=30
+
+exp_time=$(date -d "+$minutes minutes" +"%H:%M %Z (Today)")
+expe=$(date +"%Y-%m-%d")
+
+# 2. Create the system user
+useradd -e "$expe" -s /bin/false -M "$Login"
+echo -e "$Pass\n$Pass\n" | passwd "$Login" &> /dev/null
+
+MYIP=$(curl -sS -4 ifconfig.me)
+
+# 4. DYNAMIC SELF-DESTRUCT CRONJOB
+exp_m=$(date -d "+$minutes minutes" +"%M")
+exp_h=$(date -d "+$minutes minutes" +"%H")
+exp_d=$(date -d "+$minutes minutes" +"%d")
+exp_mo=$(date -d "+$minutes minutes" +"%m")
+
+cat > /etc/cron.d/kill_${Login} <<EOF
+${exp_m} ${exp_h} ${exp_d} ${exp_mo} * root pkill -u ${Login} -KILL 2>/dev/null; /usr/sbin/userdel -f ${Login} 2>/dev/null; rm -f /etc/cron.d/kill_${Login}
+EOF
+service cron restart
+
+# 5. Print the Receipt
+clear
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}      PREMIUM TIMED OPENVPN ACCOUNT       ${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e " Username    : ${GREEN}$Login${NC}"
+echo -e " Password    : ${GREEN}$Pass${NC}"
+echo -e " Valid For   : ${GREEN}$minutes Minutes${NC}"
+echo -e " Expires At  : ${RED}$exp_time${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e " Server IP   : ${GREEN}$MYIP${NC}"
+echo -e " Config File : ${GREEN}http://$MYIP:85/Universal-Client.ovpn${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e " ⚠️ ACCOUNT WILL SELF-DESTRUCT IN $minutes MINUTES."
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+read -n 1 -s -r -p "Press any key to return..."
+menu-ovpn.sh

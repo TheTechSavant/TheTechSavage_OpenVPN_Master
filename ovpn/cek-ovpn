@@ -1,0 +1,34 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+clear
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}        OPENVPN ACTIVE CONNECTIONS        ${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+LOG="/var/log/openvpn-status.log"
+
+if [[ ! -f "$LOG" ]]; then
+    echo -e " ${RED}Status log not found. Is OpenVPN running?${NC}"
+    read -n 1 -s -r -p "Press any key to return..."
+    menu-ovpn.sh
+    exit 1
+fi
+
+echo -e " USERNAME          IP ADDRESS         "
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+# Parse OpenVPN status log for active client routing
+# The regex looks for lines that look like "username,1.2.3.4:5678,..."
+grep -E "^[a-zA-Z0-9_-]+,[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:[0-9]+," "$LOG" | while IFS=',' read -r user ip rest; do
+    real_ip=$(echo "$ip" | cut -d':' -f1) # Strip the port number from the IP
+    printf " %-17s %-15s\n" "${GREEN}$user${NC}" "$real_ip"
+done
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+read -n 1 -s -r -p "Press any key to return..."
+menu-ovpn.sh

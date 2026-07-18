@@ -1,0 +1,32 @@
+#!/bin/bash
+# --- TheTechSavage Silent OVPN API ---
+/usr/bin/auth.sh || exit 1
+
+Login=$1
+Pass=$2
+masaaktif=$3
+
+if [[ -z "$Login" || -z "$Pass" || -z "$masaaktif" ]]; then
+    echo "Error: Missing API arguments. Usage: api-ovpn [User] [Pass] [Days]"
+    exit 1
+fi
+
+IP=$(curl -sS -4 ifconfig.me)
+exp_date=$(date -d "$masaaktif days" +"%b %d, %Y")
+expe=$(date -d "$masaaktif days" +"%Y-%m-%d")
+
+# Create User Silently
+useradd -e "$expe" -s /bin/false -M "$Login"
+echo -e "$Pass\n$Pass\n" | passwd "$Login" &> /dev/null
+
+# Output for Telegram Bot
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "      PREMIUM OPENVPN ACCOUNT      "
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+printf "%-13s : %s\n" "Username" "$Login"
+printf "%-13s : %s\n" "Password" "$Pass"
+printf "%-13s : %s\n" "Expired On" "$exp_date"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+printf "%-13s : %s\n" "Server IP" "$IP"
+printf "%-13s : %s\n" "Config Link" "http://$IP:85/Universal-Client.ovpn"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
