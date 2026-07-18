@@ -48,7 +48,7 @@ echo "Initializing System Architecture..."
 mkdir -p /etc/xray /etc/openvpn /usr/local/etc/openvpn /var/log/xray
 
 # Added nginx to serve the universal file
-apt update && apt install -y openvpn easy-rsa iptables-persistent unzip wget curl vnstat nginx
+apt update && apt install -y openvpn easy-rsa iptables-persistent zip unzip wget curl vnstat nginx
 
 # 3. RUN THE OPENVPN ENGINE
 echo "=========================================================="
