@@ -75,6 +75,10 @@ run_backup() {
     cp /root/Universal-Client.ovpn "$BACKUP_DIR"/openvpn/Universal-Client.ovpn 2>/dev/null
     cp -r /etc/openvpn/limit "$BACKUP_DIR"/openvpn/limit 2>/dev/null
 
+    # Scrub IPs to make the backup portable
+    sed -i '/^local/d' "$BACKUP_DIR"/openvpn/server.conf 2>/dev/null
+    sed -i -E 's/^remote [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/remote REPLACE_IP/' "$BACKUP_DIR"/openvpn/Universal-Client.ovpn 2>/dev/null
+
     # Copy System Settings
     [[ -f /etc/openvpn/tg_backup.conf ]] && cp /etc/openvpn/tg_backup.conf "$BACKUP_DIR"/system/
     [[ -f /etc/cron.d/auto_backup ]] && cp /etc/cron.d/auto_backup "$BACKUP_DIR"/system/

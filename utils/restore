@@ -55,12 +55,18 @@ if [ -f "/root/restore_temp/ssh/vpn_users.txt" ]; then
     done < /root/restore_temp/ssh/vpn_users.txt
 fi
 
+MYIP=$(curl -sS -4 ifconfig.me)
+
 echo -e " \033[0;32m[+]\033[0m Restoring OpenVPN Configurations..."
 if [ -f "/root/restore_temp/openvpn/server.conf" ]; then
     cp /root/restore_temp/openvpn/server.conf /etc/openvpn/server/server.conf
+    # Guarantee no local IP binding crashes the new server
+    sed -i '/^local/d' /etc/openvpn/server/server.conf
 fi
 if [ -f "/root/restore_temp/openvpn/Universal-Client.ovpn" ]; then
     cp /root/restore_temp/openvpn/Universal-Client.ovpn /root/Universal-Client.ovpn
+    # Inject the new Server IP into the client profile
+    sed -i -E "s/^remote (REPLACE_IP|[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/remote $MYIP/" /root/Universal-Client.ovpn
     cp /root/Universal-Client.ovpn /var/www/html/ovpn/Universal-Client.ovpn 2>/dev/null
 fi
 if [ -d "/root/restore_temp/openvpn/limit" ]; then
