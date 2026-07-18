@@ -48,25 +48,135 @@ case $req in
         locker-ovpn
         ;;
     2)
-        read -p " Enter Username to Lock : " user
-        if getent passwd "$user" > /dev/null 2>&1; then
-            passwd -l "$user" > /dev/null 2>&1
-            echo "kill $user" | socat - TCP4:127.0.0.1:7505 > /dev/null 2>&1
-            echo -e " ${GREEN}[+] User $user has been locked and disconnected!${NC}"
-        else
-            echo -e " ${RED}[!] User not found.${NC}"
+        clear
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}            MANUAL LOCK USER              ${NC}"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        
+        tmp_users="/tmp/ovpn_unlocked.txt"
+        > "$tmp_users"
+        
+        while IFS=: read -r username password uid gid info home shell; do
+            if [[ "$uid" -ge 1000 && "$username" != "nobody" && "$shell" == "/bin/false" ]]; then
+                status=$(passwd -S "$username" 2>/dev/null | awk '{print $2}')
+                if [[ "$status" != "L" && "$status" != "LK" ]]; then
+                    echo "$username" >> "$tmp_users"
+                fi
+            fi
+        done < /etc/passwd
+        
+        if [[ ! -s "$tmp_users" ]]; then
+            echo -e " ${GREEN}No active (unlocked) users found.${NC}"
+            rm -f "$tmp_users"
+            read -n 1 -s -r -p "Press any key to return..."
+            locker-ovpn
+            exit
         fi
+        
+        echo -e " NO   USER"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        i=1
+        while read -r u; do
+            printf " %-4s %-15s\n" "$i." "$u"
+            ((i++))
+        done < "$tmp_users"
+        echo -e " 0.   Back to Menu"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        
+        read -p " Select Number or Username : " input
+        
+        if [[ "$input" == "0" || "$input" == "00" || -z "$input" ]]; then
+            rm -f "$tmp_users"
+            locker-ovpn
+            exit
+        fi
+        
+        if grep -q -x "$input" "$tmp_users"; then
+            user="$input"
+        elif [[ "$input" =~ ^[0-9]+$ ]]; then
+            user=$(sed -n "${input}p" "$tmp_users")
+        else
+            user=""
+        fi
+        
+        if [[ -z "$user" ]]; then
+            echo -e "${RED}[ERROR] Invalid selection.${NC}"
+            rm -f "$tmp_users"
+            sleep 2
+            locker-ovpn
+            exit
+        fi
+        rm -f "$tmp_users"
+        
+        passwd -l "$user" > /dev/null 2>&1
+        echo "kill $user" | socat - TCP4:127.0.0.1:7505 > /dev/null 2>&1
+        echo -e " ${GREEN}[+] User $user has been locked and disconnected!${NC}"
         sleep 2
         locker-ovpn
         ;;
     3)
-        read -p " Enter Username to Unlock : " user
-        if getent passwd "$user" > /dev/null 2>&1; then
-            passwd -u "$user" > /dev/null 2>&1
-            echo -e " ${GREEN}[+] User $user unlocked. They may now connect.${NC}"
-        else
-            echo -e " ${RED}[!] User not found.${NC}"
+        clear
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}              UNLOCK USER                 ${NC}"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        
+        tmp_users="/tmp/ovpn_locked.txt"
+        > "$tmp_users"
+        
+        while IFS=: read -r username password uid gid info home shell; do
+            if [[ "$uid" -ge 1000 && "$username" != "nobody" && "$shell" == "/bin/false" ]]; then
+                status=$(passwd -S "$username" 2>/dev/null | awk '{print $2}')
+                if [[ "$status" == "L" || "$status" == "LK" ]]; then
+                    echo "$username" >> "$tmp_users"
+                fi
+            fi
+        done < /etc/passwd
+        
+        if [[ ! -s "$tmp_users" ]]; then
+            echo -e " ${GREEN}No accounts are currently locked.${NC}"
+            rm -f "$tmp_users"
+            read -n 1 -s -r -p "Press any key to return..."
+            locker-ovpn
+            exit
         fi
+        
+        echo -e " NO   USER"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        i=1
+        while read -r u; do
+            printf " %-4s %-15s\n" "$i." "$u"
+            ((i++))
+        done < "$tmp_users"
+        echo -e " 0.   Back to Menu"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        
+        read -p " Select Number or Username : " input
+        
+        if [[ "$input" == "0" || "$input" == "00" || -z "$input" ]]; then
+            rm -f "$tmp_users"
+            locker-ovpn
+            exit
+        fi
+        
+        if grep -q -x "$input" "$tmp_users"; then
+            user="$input"
+        elif [[ "$input" =~ ^[0-9]+$ ]]; then
+            user=$(sed -n "${input}p" "$tmp_users")
+        else
+            user=""
+        fi
+        
+        if [[ -z "$user" ]]; then
+            echo -e "${RED}[ERROR] Invalid selection.${NC}"
+            rm -f "$tmp_users"
+            sleep 2
+            locker-ovpn
+            exit
+        fi
+        rm -f "$tmp_users"
+        
+        passwd -u "$user" > /dev/null 2>&1
+        echo -e " ${GREEN}[+] User $user unlocked. They may now connect.${NC}"
         sleep 2
         locker-ovpn
         ;;

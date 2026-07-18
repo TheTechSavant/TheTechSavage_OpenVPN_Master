@@ -11,25 +11,79 @@ echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${YELLOW}        MODIFY OPENVPN LOGIN LIMIT        ${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-read -p " Target Username : " user
+tmp_users="/tmp/ovpn_limit.txt"
+> "$tmp_users"
 
-if getent passwd "$user" > /dev/null 2>&1; then
-    cur_limit="1"
-    if [[ -f "/etc/openvpn/limit/$user" ]]; then
-        cur_limit=$(cat "/etc/openvpn/limit/$user")
+while IFS=: read -r username password uid gid info home shell; do
+    if [[ "$uid" -ge 1000 && "$username" != "nobody" && "$shell" == "/bin/false" ]]; then
+        cur_limit="1"
+        if [[ -f "/etc/openvpn/limit/$username" ]]; then
+            cur_limit=$(cat "/etc/openvpn/limit/$username")
+        fi
+        echo "$username|$cur_limit" >> "$tmp_users"
     fi
-    
-    echo -e " Current Limit : ${YELLOW}$cur_limit Connection(s)${NC}"
-    read -p " Enter New Max Limit : " new_limit
-    
-    if [[ -z "$new_limit" || ! "$new_limit" =~ ^[0-9]+$ ]]; then
-        echo -e "\n ${RED}[ERROR] Invalid number! Limit unchanged.${NC}"
-    else
-        echo "$new_limit" > "/etc/openvpn/limit/$user"
-        echo -e "\n ${GREEN}[OK] Limit for $user updated to $new_limit!${NC}"
-    fi
+done < /etc/passwd
+
+if [[ ! -s "$tmp_users" ]]; then
+    echo -e "${RED}Error: No OpenVPN users found!${NC}"
+    rm -f "$tmp_users"
+    read -n 1 -s -r -p "Press any key to return..."
+    menu-ovpn.sh
+    exit 1
+fi
+
+echo -e " NO   USER            LIMIT"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+i=1
+while IFS='|' read -r user lim; do
+    printf " %-4s %-15s %-5s\n" "$i." "$user" "$lim"
+    ((i++))
+done < "$tmp_users"
+echo -e " 0.   Back to Menu"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+read -p " Select Number or Username : " input
+
+if [[ "$input" == "0" || "$input" == "00" || -z "$input" ]]; then
+    rm -f "$tmp_users"
+    menu-ovpn.sh
+    exit 0
+fi
+
+if grep -q "^${input}|" "$tmp_users"; then
+    user=$(grep "^${input}|" "$tmp_users" | head -n 1 | cut -d'|' -f1)
+    cur_limit=$(grep "^${input}|" "$tmp_users" | head -n 1 | cut -d'|' -f2)
+elif [[ "$input" =~ ^[0-9]+$ ]]; then
+    user=$(sed -n "${input}p" "$tmp_users" | cut -d'|' -f1)
+    cur_limit=$(sed -n "${input}p" "$tmp_users" | cut -d'|' -f2)
 else
-    echo -e "\n ${RED}[!] User not found.${NC}"
+    if grep -q "^${input}|" "$tmp_users" || grep -q "^${input}$" <<< "$(cut -d'|' -f1 $tmp_users)"; then
+        user=$(grep -E "^${input}\|" "$tmp_users" | head -n 1 | cut -d'|' -f1)
+        cur_limit=$(grep -E "^${input}\|" "$tmp_users" | head -n 1 | cut -d'|' -f2)
+    else
+        user=""
+    fi
+fi
+
+if [[ -z "$user" ]]; then
+    echo -e "${RED}[ERROR] Invalid selection. Please try again.${NC}"
+    rm -f "$tmp_users"
+    sleep 2
+    limit-ovpn
+    exit 1
+fi
+rm -f "$tmp_users"
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e " Target User   : ${GREEN}$user${NC}"
+echo -e " Current Limit : ${YELLOW}$cur_limit Connection(s)${NC}"
+read -p " Enter New Max Limit : " new_limit
+
+if [[ -z "$new_limit" || ! "$new_limit" =~ ^[0-9]+$ ]]; then
+    echo -e "\n ${RED}[ERROR] Invalid number! Limit unchanged.${NC}"
+else
+    echo "$new_limit" > "/etc/openvpn/limit/$user"
+    echo -e "\n ${GREEN}[OK] Limit for $user updated to $new_limit!${NC}"
 fi
 
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
