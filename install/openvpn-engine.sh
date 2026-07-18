@@ -42,11 +42,9 @@ fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Auto-Detect IPv4 Only
+# Auto-Detect Internal & Public IPv4
 ip=$(ip -4 route get 8.8.8.8 | awk {'print $7'} | tr -d '\n')
-if [[ -z "$ip" ]]; then
-	ip=$(curl -sS -4 ifconfig.me)
-fi
+public_ip=$(curl -sS -4 ifconfig.me)
 
 # Disable IPv6 Configuration
 ip6=""
@@ -164,8 +162,7 @@ cp pki/private/easyrsa-tls.key /etc/openvpn/server/tc.key
 PLUGIN=$(find /usr -type f -name "openvpn-plugin-auth-pam.so" | head -n 1)
 
 # Generate server.conf (INJECTED PAM AUTH & IPv6)
-echo "local $ip
-port $port
+echo "port $port
 proto $protocol
 dev tun
 ca ca.crt
@@ -178,7 +175,6 @@ server 10.8.0.0 255.255.255.0
 plugin $PLUGIN login
 verify-client-cert none
 username-as-common-name
-duplicate-cn
 status /var/log/openvpn-status.log" > /etc/openvpn/server/server.conf
 
 if [[ -z "$ip6" ]]; then
@@ -259,8 +255,8 @@ if systemctl is-active --quiet firewalld.service; then
 	firewall-cmd --zone=trusted --add-source=10.8.0.0/24
 	firewall-cmd --permanent --add-port="$port"/"$protocol"
 	firewall-cmd --permanent --zone=trusted --add-source=10.8.0.0/24
-	firewall-cmd --direct --add-rule ipv4 nat POSTROUTING 0 -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to "$ip"
-	firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to "$ip"
+	firewall-cmd --direct --add-rule ipv4 nat POSTROUTING 0 -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j MASQUERADE
+	firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j MASQUERADE
 	if [[ -n "$ip6" ]]; then
 		firewall-cmd --zone=trusted --add-source=fddd:1194:1194:1194::/64
 		firewall-cmd --permanent --zone=trusted --add-source=fddd:1194:1194:1194::/64
@@ -279,11 +275,11 @@ After=network-online.target
 Wants=network-online.target
 [Service]
 Type=oneshot
-ExecStart=$iptables_path -w 5 -t nat -A POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to $ip
+ExecStart=$iptables_path -w 5 -t nat -A POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j MASQUERADE
 ExecStart=$iptables_path -w 5 -I INPUT -p $protocol --dport $port -j ACCEPT
 ExecStart=$iptables_path -w 5 -I FORWARD -s 10.8.0.0/24 -j ACCEPT
 ExecStart=$iptables_path -w 5 -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-ExecStop=$iptables_path -w 5 -t nat -D POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to $ip
+ExecStop=$iptables_path -w 5 -t nat -D POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j MASQUERADE
 ExecStop=$iptables_path -w 5 -D INPUT -p $protocol --dport $port -j ACCEPT
 ExecStop=$iptables_path -w 5 -D FORWARD -s 10.8.0.0/24 -j ACCEPT
 ExecStop=$iptables_path -w 5 -D FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT" > /etc/systemd/system/openvpn-iptables.service
@@ -324,6 +320,15 @@ remote-cert-tls server
 auth-user-pass
 ignore-unknown-option block-outside-dns
 verb 3" > /etc/openvpn/server/client-common.txt
+
+# Port 53 Failsafe: Clear systemd-resolved if Port 53 is chosen
+if [[ "$port" == "53" ]] && systemctl is-active --quiet systemd-resolved.service; then
+	sed -i 's/#DNSStubListener=yes/DNSStubListener=no/' /etc/systemd/resolved.conf
+	sed -i 's/DNSStubListener=yes/DNSStubListener=no/' /etc/systemd/resolved.conf
+	systemctl restart systemd-resolved
+	rm -f /etc/resolv.conf
+	ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+fi
 
 # Start OpenVPN
 systemctl enable --now openvpn-server@server.service
