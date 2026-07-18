@@ -69,16 +69,12 @@ if [ -f "/root/restore_temp/openvpn/Universal-Client.ovpn" ]; then
     sed -i -E "s/^remote (REPLACE_IP|[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/remote $MYIP/" /root/Universal-Client.ovpn
     cp /root/Universal-Client.ovpn /var/www/html/ovpn/Universal-Client.ovpn 2>/dev/null
 fi
-if [ -d "/root/restore_temp/openvpn/limit" ]; then
-    cp -r /root/restore_temp/openvpn/limit/* /etc/openvpn/limit/ 2>/dev/null
-fi
 
 echo -e " \033[0;32m[+]\033[0m Restoring System Settings & Cronjobs..."
 if [ -d "/root/restore_temp/system" ]; then
     [[ -f /root/restore_temp/system/tg_backup.conf ]] && cp /root/restore_temp/system/tg_backup.conf /etc/openvpn/tg_backup.conf && chmod 600 /etc/openvpn/tg_backup.conf
     [[ -f /root/restore_temp/system/auto_backup ]] && cp /root/restore_temp/system/auto_backup /etc/cron.d/auto_backup
     [[ -f /root/restore_temp/system/auto_reboot ]] && cp /root/restore_temp/system/auto_reboot /etc/cron.d/auto_reboot
-    [[ -f /root/restore_temp/system/ovpn-sniper ]] && cp /root/restore_temp/system/ovpn-sniper /etc/cron.d/ovpn-sniper
 fi
 
 echo -e " \033[0;32m[+]\033[0m Restarting Core Services..."
