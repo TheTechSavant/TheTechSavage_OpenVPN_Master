@@ -31,7 +31,9 @@ apt update && apt install -y wget && wget -q https://raw.githubusercontent.com/T
 
 ### 🛠️ Setup Steps
 
-1.  **Register your IP:** Ensure your server IP is whitelisted in your Master API database before running the installer.
+1.  **Register your IP:**
+    * **Free 24h Trial:** Start our [All-in-One Bot](https://t.me/TheTechSavageFile2LinkBot) and use the `/trialip` command to whitelist your VPS instantly.
+    * **Full Premium:** Contact [@TheTechSavageSupport](https://t.me/thetechsavagesupport) to purchase a 30-day or Lifetime license.
 2.  **Run the Installer:** Paste the installation command above into your terminal.
 3.  **Network Configuration:** Follow the on-screen prompts to configure your IP, protocol (UDP recommended), and DNS resolvers. 
 4.  **Completion:** The server will configure `iptables` NAT routing, deploy the UI, and start the OpenVPN engine. 
