@@ -7,6 +7,15 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 MYIP=$(curl -sS -4 ifconfig.me)
 
+# Dynamically fetch Port and Protocol from the active config
+if [[ -f /etc/openvpn/server/server.conf ]]; then
+    OVPN_PORT=$(grep '^port ' /etc/openvpn/server/server.conf | cut -d " " -f 2)
+    OVPN_PROTO=$(grep '^proto ' /etc/openvpn/server/server.conf | cut -d " " -f 2 | tr '[:lower:]' '[:upper:]')
+else
+    OVPN_PORT="Unknown"
+    OVPN_PROTO="Unknown"
+fi
+
 clear
 echo -e "${CYAN}┌─────────────────────────────────────────────────────┐${NC}"
 echo -e "${YELLOW}               SYSTEM SETTINGS MANAGER                ${NC}"
@@ -30,7 +39,7 @@ case $opt in
     echo -e "${CYAN}┌─────────────────────────────────────────────────────┐${NC}"
     echo -e "${YELLOW}                 SYSTEM PORTS & INFO                  ${NC}"
     echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
-    echo -e "  - OpenVPN Server  : 1194 (TCP/UDP depending on install)"
+    echo -e "  - OpenVPN Server  : $OVPN_PORT ($OVPN_PROTO)"
     echo -e "  - Nginx Configs   : 85 (HTTP)"
     echo -e "  - OVPN Management : 7505 (Localhost)"
     echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
