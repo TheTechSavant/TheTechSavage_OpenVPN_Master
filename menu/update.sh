@@ -49,15 +49,10 @@ safe_update "ovpn" "del-ovpn"
 safe_update "ovpn" "renew-ovpn"
 safe_update "ovpn" "member-ovpn"
 safe_update "ovpn" "cek-ovpn"
-safe_update "ovpn" "sniper"
-mv /usr/bin/sniper /usr/bin/ovpn-sniper 2>/dev/null
 safe_update "ovpn" "xp"
 mv /usr/bin/xp /usr/bin/ovpn-xp 2>/dev/null
 safe_update "ovpn" "trial-ovpn"
-safe_update "ovpn" "limit-ovpn"
 safe_update "ovpn" "timed-ovpn"
-safe_update "ovpn" "autokill-ovpn"
-safe_update "ovpn" "locker-ovpn"
 safe_update "ovpn" "api-ovpn"
 
 echo -e " \n${YELLOW}⚙️ Upgrading Utility Modules...${NC}"

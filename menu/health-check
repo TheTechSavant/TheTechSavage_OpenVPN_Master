@@ -55,7 +55,6 @@ check_script "del-ovpn"
 check_script "renew-ovpn"
 check_script "member-ovpn"
 check_script "cek-ovpn"
-check_script "ovpn-sniper"
 check_script "ovpn-xp"
 
 # 4. CHECK LIMIT DIRECTORIES & CRONJOBS
@@ -63,8 +62,6 @@ echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━�
 echo -e " DATABASE & AUTOMATION CHECK:"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-if [[ -d /etc/openvpn/limit ]]; then echo -e " Limit Database : ${GREEN}[OK]${NC}"; else echo -e " Limit Database : ${RED}[MISSING]${NC}"; fi
-if [[ -f /etc/cron.d/ovpn-sniper ]]; then echo -e " AutoKill Cron  : ${GREEN}[ACTIVE]${NC}"; else echo -e " AutoKill Cron  : ${RED}[MISSING]${NC}"; fi
 if [[ -f /etc/cron.d/ovpn-xp ]]; then echo -e " AutoExpiry Cron: ${GREEN}[ACTIVE]${NC}"; else echo -e " AutoExpiry Cron: ${RED}[MISSING]${NC}"; fi
 
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

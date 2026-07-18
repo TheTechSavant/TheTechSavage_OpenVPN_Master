@@ -41,7 +41,6 @@ case $opt in
     echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
     echo -e "  - OpenVPN Server  : $OVPN_PORT ($OVPN_PROTO)"
     echo -e "  - Nginx Configs   : 85 (HTTP)"
-    echo -e "  - OVPN Management : 7505 (Localhost)"
     echo -e "${CYAN}└─────────────────────────────────────────────────────┘${NC}"
     read -n 1 -s -r -p "Press any key to return..." 
     menu-set.sh ;;
