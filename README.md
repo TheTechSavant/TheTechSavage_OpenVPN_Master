@@ -52,7 +52,7 @@ menu
 
 | Service | Protocol | Port | Function |
 | :--- | :--- | :--- | :--- |
-| **OpenVPN Server** | UDP/TCP | 1194 | Primary VPN Tunnel |
+| **OpenVPN Server** | UDP/TCP | Custom (Default: 1194) | Primary VPN Tunnel |
 | **Nginx Hub** | HTTP | 85 | Universal `.ovpn` File Server |
 | **OVPN Management** | TCP | 7505 | Localhost API for the Sniper |
 
