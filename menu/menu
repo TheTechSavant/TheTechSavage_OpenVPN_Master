@@ -1,0 +1,46 @@
+#!/bin/bash
+/usr/bin/auth.sh || exit 1
+if [[ "$(cat /tmp/.vps_auth_token 2>/dev/null)" != "TechSavage_$(date +%Y-%m-%d)" ]]; then exit 1; fi
+
+# Basic System Info
+MYIP=$(curl -sS -4 ifconfig.me)
+UPTIME=$(uptime -p | cut -d " " -f 2-10)
+
+# Bandwidth Monitor Logic
+IFACE=$(ip route get 1.1.1.1 | awk '{print $5; exit}')
+CURRENT_MONTH=$(date +%Y-%m)
+RX_TODAY=$(vnstat -i $IFACE | grep "today" | awk '{print $2" "$3}' || echo "0 B")
+RX_YEST=$(vnstat -i $IFACE | grep "yesterday" | awk '{print $2" "$3}' || echo "0 B")
+RX_MONTH=$(vnstat -i $IFACE -m | grep "$CURRENT_MONTH" | awk '{print $8" "$9}' || echo "0 B")
+
+# User Count
+OVPN_COUNT=$(awk -F: '$3 >= 1000 && $1 != "nobody" && $7 == "/bin/false" {print $1}' /etc/passwd | wc -l)
+
+clear
+echo -e "\033[0;36m┌─────────────────────────────────────────────────────┐\033[0m"
+echo -e "\033[0;33m             THETECHSAVAGE OPENVPN MANAGER            \033[0m"
+echo -e "\033[0;36m└─────────────────────────────────────────────────────┘\033[0m"
+echo -e " Server IP    : $MYIP"
+echo -e " Uptime       : $UPTIME"
+echo -e " Active Users : \033[0;32m$OVPN_COUNT\033[0m"
+echo -e "\033[0;36m┌─────────────────────────────────────────────────────┐\033[0m"
+echo -e "\033[0;33m                 MONITORING BANDWIDTH                 \033[0m"
+echo -e "\033[0;36m├─────────────────────────────────────────────────────┤\033[0m"
+echo -e " BANDWIDTH USED TODAY       = \033[0;32m$RX_TODAY\033[0m"
+echo -e " BANDWIDTH USED YESTERDAY   = \033[0;32m$RX_YEST\033[0m"
+echo -e " TOTAL BANDWIDTH THIS MONTH = \033[0;32m$RX_MONTH\033[0m"
+echo -e "\033[0;36m└─────────────────────────────────────────────────────┘\033[0m"
+echo -e "    \033[0;32m[01]\033[0m OpenVPN Manager"
+echo -e "    \033[0;32m[02]\033[0m Settings & Health"
+echo -e "    \033[0;32m[03]\033[0m Backup/Restore"
+echo -e "    \033[0;31m[00]\033[0m Exit"
+echo -e "\033[0;36m└─────────────────────────────────────────────────────┘\033[0m"
+
+read -p " Select menu : " opt || exit 1
+case $opt in
+    1|01) menu-ovpn.sh ;;
+    2|02) menu-set.sh ;;
+    3|03) backup.sh ;;
+    0|00) clear; exit 0 ;;
+    *) echo "Invalid Option"; sleep 1; menu ;;
+esac
