@@ -164,7 +164,8 @@ echo -e "    \033[0;32m[02]\033[0m  Set Auto-Backup (Every 12 Hours)"
 echo -e "    \033[0;32m[03]\033[0m  Set Auto-Backup (Every 24 Hours)"
 echo -e "    \033[0;32m[04]\033[0m  Turn OFF Auto-Backup"
 echo -e "    \033[0;32m[05]\033[0m  Reset Telegram Credentials"
-echo -e "    \033[0;33m[06]\033[0m  Restore From Backup Link"
+echo -e "    \033[0;32m[06]\033[0m  View Telegram Credentials"
+echo -e "    \033[0;33m[07]\033[0m  Restore From Backup Link"
 echo -e "\033[0;36m└─────────────────────────────────────────────────────┘\033[0m"
 echo -e "    \033[0;31m[00]\033[0m  Back to Main Menu"
 echo -e ""
@@ -193,7 +194,22 @@ case $opt in
         rm -f "$TG_CONF"
         echo -e " \033[0;32mCredentials cleared.\033[0m"
         sleep 2; backup.sh ;;
-    6|06) restore.sh ;;
+    6|06)
+        clear
+        echo -e "\033[0;36m┌─────────────────────────────────────────────────────┐\033[0m"
+        echo -e "\033[0;33m               TELEGRAM CREDENTIALS                   \033[0m"
+        echo -e "\033[0;36m└─────────────────────────────────────────────────────┘\033[0m"
+        if [ -f "$TG_CONF" ]; then
+            source "$TG_CONF"
+            echo -e " \033[0;32mBOT TOKEN :\033[0m $BOT_TOKEN"
+            echo -e " \033[0;32mCHAT ID   :\033[0m $CHAT_ID"
+        else
+            echo -e " \033[0;31m[!] No credentials saved yet.\033[0m"
+        fi
+        echo -e "\033[0;36m└─────────────────────────────────────────────────────┘\033[0m"
+        read -n 1 -s -r -p "Press any key to return..."
+        backup.sh ;;
+    7|07) restore.sh ;;
     0|00) menu ;;
     *) echo "Invalid Option"; sleep 1; backup.sh ;;
 esac
