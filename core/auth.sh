@@ -29,6 +29,10 @@ fi
 STATUS=$(echo "$RESPONSE" | grep -o '"status": *"[^"]*"' | cut -d'"' -f4)
 CLIENT_NAME=$(echo "$RESPONSE" | grep -o '"client": *"[^"]*"' | cut -d'"' -f4)
 EXP_DATE=$(echo "$RESPONSE" | grep -o '"exp": *"[^"]*"' | cut -d'"' -f4)
+MSG=$(echo "$RESPONSE" | grep -o '"message": *"[^"]*"' | cut -d'"' -f4)
+
+# Fallback if the API doesn't provide a specific error message
+[[ -z "$MSG" ]] && MSG="IP Not Registered or License Expired"
 
 if [[ "$STATUS" != "valid" ]]; then
     if [[ -x /usr/bin/enforcer.sh ]]; then
